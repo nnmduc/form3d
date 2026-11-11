@@ -16,7 +16,7 @@ from typing import Any
 # Ensure pymeshlab is available in sys.modules so hy3dgen.shapegen does not fail on import
 if "pymeshlab" not in sys.modules:
     try:
-        import pymeshlab
+        import pymeshlab  # noqa: F401
     except ImportError:
         _dummy = types.ModuleType("pymeshlab")
         class _DummyMeshSet:
@@ -495,17 +495,24 @@ def run_step5(
 
     t0 = time.time()
     if effective_remote_url:
-        remote_meta = synthesize_multiview_mesh_remote(
-            remote_url=effective_remote_url,
-            view_images=view_images,
-            asset_name=asset_name,
-            octree_resolution=octree_resolution,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            target_height_mm=target_height_mm,
-            taubin_smooth_iterations=taubin_smooth_iterations,
-            download_mesh=download_mesh,
-        )
+        try:
+            remote_meta = synthesize_multiview_mesh_remote(
+                remote_url=effective_remote_url,
+                view_images=view_images,
+                asset_name=asset_name,
+                octree_resolution=octree_resolution,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                target_height_mm=target_height_mm,
+                taubin_smooth_iterations=taubin_smooth_iterations,
+                download_mesh=download_mesh,
+            )
+        except Exception as exc:
+            print(f"[Step 5 Warning] Remote Colab GPU worker unreachable ({exc}). Falling back to local synthesizer...")
+            remote_meta = None
+            effective_remote_url = None
+
+    if remote_meta:
         infer_seconds = float(remote_meta.get("inference_seconds") or round(time.time() - t0, 2))
         compute_device = str(remote_meta.get("device") or "cuda (colab)")
 

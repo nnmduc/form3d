@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw
 from steps.agy_runner import AgyExecutionError, parse_agy_json_envelope
 from steps.step1_optimize_prompt import DEFAULT_SCHEMA_PATH as STEP1_SCHEMA, sanitize_slug
 from steps.step2_generate_image import DEFAULT_SCHEMA_PATH as STEP2_SCHEMA
-from steps.step3_process_image import clean_alpha_keep_main_subject, slice_and_clean_2x2_sheet
+from steps.step3_process_image import slice_and_clean_2x2_sheet
 from steps.step4_optimize_3d import DEFAULT_SCHEMA_PATH as STEP4_SCHEMA
 from steps.step5_generate_mesh import postprocess_mesh_for_3d_printing, run_step5, select_compute_device
 

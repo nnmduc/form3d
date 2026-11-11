@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowCounterClockwise,
@@ -12,6 +12,7 @@ import {
   DownloadSimple,
   Eye,
   FolderOpen,
+  Image as ImageIcon,
   Moon,
   Pause,
   PencilSimple,
@@ -22,12 +23,10 @@ import {
   TrashSimple,
   WarningCircle,
   X,
+  ArrowRight,
 } from "@phosphor-icons/react";
-import type { CameraAngle, ShadingMode } from "./components/Viewport3D";
-
-const Viewport3D = lazy(() =>
-  import("./components/Viewport3D").then((m) => ({ default: m.Viewport3D }))
-);
+import { Viewport3D, type CameraAngle, type ShadingMode } from "./components/Viewport3D";
+import { LiteModeView, type LiteStep } from "./components/LiteModeView";
 
 export const API_BASE = "http://127.0.0.1:8000";
 
@@ -321,6 +320,20 @@ const STAGE_META: Record<
   },
 };
 
+export const LITE_STEP_ORDER: LiteStep[] = [
+  "guide_prompt",
+  "upload_calibrate",
+  "review_tiles",
+  "synthesize_3d",
+];
+
+export const LITE_STEP_META: Record<LiteStep, { shortLabel: string; title: string }> = {
+  guide_prompt: { shortLabel: "Prompt", title: "Tạo Prompt Chuẩn AI" },
+  upload_calibrate: { shortLabel: "Căn chỉnh", title: "Tải Ảnh & Căn Trục 2x2" },
+  review_tiles: { shortLabel: "Vị trí", title: "Kiểm Tra & Đổi Vị Trí Góc" },
+  synthesize_3d: { shortLabel: "3D Studio", title: "Dựng Hình 3D & Xuất File" },
+};
+
 const PROMPT_SUGGESTIONS = [
   "Generate a cute robot",
   "Minimal ceramic desk planter",
@@ -330,6 +343,8 @@ const PROMPT_SUGGESTIONS = [
 export function App() {
   const prefersReducedMotion = useReducedMotion();
   const [isDark, setIsDark] = useState(false);
+  const [appMode, setAppMode] = useState<"lite" | "studio">("studio");
+  const [liteStep, setLiteStep] = useState<LiteStep>("guide_prompt");
   const [prompt, setPrompt] = useState("Generate a cute robot");
   const [stage, setStage] = useState<PipelineStage>("idle");
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -432,6 +447,14 @@ export function App() {
     } catch (err) {
       console.error("Failed to load project:", err);
     }
+  };
+
+  const handleSwitchToStudioMode = async (targetProjId?: string) => {
+    const pId = targetProjId || activeProjectId;
+    if (pId) {
+      await openProject(pId, true);
+    }
+    setAppMode("studio");
   };
 
   const handleRenameProject = async (projId: string, newName: string) => {
@@ -1077,8 +1100,36 @@ export function App() {
           )}
         </div>
 
-        {/* Interactive Stage Scrubber Pill (shown when project is open or running) */}
-        {stage !== "idle" && (
+        {/* Mode Switcher: Full Studio (Text-to-3D) vs Lite Mode (Image-to-3D) */}
+        <div className="flex items-center gap-1 rounded-full bg-zinc-200/70 p-1 dark:bg-zinc-800/80">
+          <button
+            type="button"
+            onClick={() => handleSwitchToStudioMode()}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+              appMode === "studio"
+                ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+            }`}
+          >
+            <Cube size={13} weight="bold" />
+            <span>Text to 3D</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAppMode("lite")}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+              appMode === "lite"
+                ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+            }`}
+          >
+            <ImageIcon size={13} weight="bold" />
+            <span>Image to 3D</span>
+          </button>
+        </div>
+
+        {/* Interactive Stage Scrubber Pill (shown when project is open or running in Studio mode) */}
+        {appMode === "studio" && stage !== "idle" && (
           <nav
             aria-label="Pipeline states"
             className="liquid-glass-web-approx flex items-center gap-1 rounded-full p-1"
@@ -1116,43 +1167,47 @@ export function App() {
           </nav>
         )}
 
-        {/* Minimal Theme + Colab Remote GPU + Model Downloader Alert + Playback Controls */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowColabModal(true)}
-            title={
-              colabStatus?.ok
-                ? `Connected to Colab GPU (${colabStatus.gpu_name || "CUDA"}) — ${colabStatus.url}`
-                : colabStatus?.url
-                  ? `Colab tunnel unreachable: ${colabStatus.error || colabStatus.url}`
-                  : "Configure Google Colab Pro Remote GPU (A100/L4) via Cloudflare Tunnel"
-            }
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all active:scale-95 ${
-              colabStatus?.ok
-                ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                : colabStatus?.url
-                  ? "border border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                  : "liquid-glass-web-approx text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
-            }`}
+        {/* Synchronized Stage Scrubber Pill for Image to 3D mode */}
+        {appMode === "lite" && (
+          <nav
+            aria-label="Image to 3D Steps"
+            className="liquid-glass-web-approx flex items-center gap-1 rounded-full p-1"
           >
-            <span
-              className={`h-2 w-2 rounded-full ${
-                colabStatus?.ok
-                  ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.75)]"
-                  : colabStatus?.url
-                    ? "bg-amber-500"
-                    : "bg-zinc-400 dark:bg-zinc-500"
-              }`}
-            />
-            <span className="max-w-[140px] truncate">
-              {colabStatus?.ok
-                ? colabStatus.gpu_name?.replace("NVIDIA ", "") || "Colab GPU"
-                : colabStatus?.url
-                  ? "Colab Offline"
-                  : "Colab GPU"}
-            </span>
-          </button>
+            {LITE_STEP_ORDER.map((item) => {
+              const active = liteStep === item;
+              const passed =
+                LITE_STEP_ORDER.indexOf(liteStep) > LITE_STEP_ORDER.indexOf(item);
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setLiteStep(item)}
+                  className={`relative rounded-full px-3 py-1 text-xs font-medium transition-colors duration-200 focus:outline-none ${
+                    active
+                      ? "text-zinc-900 dark:text-zinc-100"
+                      : passed
+                        ? "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                        : "text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="active-lite-pill"
+                      transition={springTransition}
+                      className="absolute inset-0 rounded-full bg-white shadow-xs dark:bg-zinc-800"
+                    />
+                  )}
+                  <span className="relative z-10">
+                    {LITE_STEP_META[item].shortLabel}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
+
+        {/* Minimal Theme + Model Downloader Alert + Playback Controls */}
+        <div className="flex items-center gap-2">
 
           {systemStatus && !systemStatus.models_ready && !colabStatus?.ok && (
             <button
@@ -1225,8 +1280,30 @@ export function App() {
       </header>
 
       {/* Main Spatial Canvas */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
-        <AnimatePresence mode="wait">
+      {appMode === "lite" ? (
+        <main className="relative z-10 flex flex-1 flex-col items-center justify-start px-2 py-4 w-full">
+          <LiteModeView
+            apiBase={API_BASE}
+            isDark={isDark}
+            currentStep={liteStep}
+            onStepChange={setLiteStep}
+            onSwitchToStudio={(pId) => handleSwitchToStudioMode(pId)}
+            activeProjectId={activeProjectId}
+            onSelectProject={(id) => {
+              setActiveProjectId(id);
+              refreshProjects();
+            }}
+            onAssetUpdated={(updatedAsset, updatedStage, pId) => {
+              setActiveProjectId(pId);
+              setAsset(updatedAsset);
+              setStage(updatedStage as PipelineStage);
+              refreshProjects();
+            }}
+          />
+        </main>
+      ) : (
+        <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6">
+          <AnimatePresence mode="wait">
           {/* STAGE 0: IDLE PROMPT */}
           {stage === "idle" && (
             <motion.section
@@ -1282,6 +1359,20 @@ export function App() {
                     {item}
                   </button>
                 ))}
+              </div>
+
+              {/* Chuyển sang Image to 3D */}
+              <div className="mt-5 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => setAppMode("lite")}
+                  className="group flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-semibold text-amber-700 transition-all hover:bg-amber-500/20 active:scale-95 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300"
+                >
+                  <Sparkle size={14} weight="fill" className="text-amber-500 transition-transform group-hover:rotate-12" />
+                  <span>Đã có ảnh turnaround bên ngoài?</span>
+                  <span className="underline underline-offset-2">Chuyển sang Image to 3D</span>
+                  <ArrowRight size={13} weight="bold" />
+                </button>
               </div>
 
               {/* Requirement: if existing projects, show project list, and can open it (view only) */}
@@ -1714,8 +1805,10 @@ export function App() {
           )}
         </AnimatePresence>
       </main>
+      )}
 
       {/* Bottom Dock: Minimal Progress Bar (while running) OR 3D Studio Controls (when complete) */}
+      {appMode === "studio" && (
       <footer className="relative z-30 mx-auto flex h-[80px] w-full max-w-[1400px] items-center justify-center px-6 pb-4">
         <AnimatePresence mode="wait">
           {isRunning && (
@@ -1835,6 +1928,7 @@ export function App() {
           )}
         </AnimatePresence>
       </footer>
+      )}
 
       {/* Project List Drawer / Modal */}
       <AnimatePresence>

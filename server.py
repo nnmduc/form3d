@@ -17,7 +17,7 @@ from typing import Any, AsyncGenerator, Literal
 # Ensure pymeshlab is available in sys.modules so hy3dgen.shapegen does not fail on import
 if "pymeshlab" not in sys.modules:
     try:
-        import pymeshlab
+        import pymeshlab  # noqa: F401
     except ImportError:
         _dummy = types.ModuleType("pymeshlab")
         class _DummyMeshSet:
@@ -34,13 +34,20 @@ if "pymeshlab" not in sys.modules:
         _dummy.PercentageValue = lambda x: x
         sys.modules["pymeshlab"] = _dummy
 
-from fastapi import FastAPI, HTTPException
+import shutil
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from steps.agy_runner import check_agy_status, find_agy_binary, load_app_config, save_app_config
+from steps.lite_helpers import (
+    analyze_turnaround_sheet,
+    build_lite_3d_config,
+    slice_and_clean_lite,
+)
+
+from steps.agy_runner import check_agy_status, load_app_config, save_app_config
 from steps.model_manager import check_models_status, stream_download_models
 from steps.project_manager import (
     create_project,
@@ -131,6 +138,36 @@ class SetAgyPathRequest(BaseModel):
     """Request payload for updating the agy binary path."""
 
     path: str = Field(min_length=1)
+
+
+class LiteSliceRequest(BaseModel):
+    """Request payload for slicing the 2x2 turnaround sheet in Lite Mode."""
+
+    project_id: str
+    center_x: float = Field(default=0.5, ge=0.2, le=0.8)
+    center_y: float = Field(default=0.5, ge=0.2, le=0.8)
+    trim_ratio: float = Field(default=0.02, ge=0.0, le=0.1)
+    auto_normalize_heights: bool = Field(default=True)
+
+
+class LiteConfigure3DRequest(BaseModel):
+    """Request payload for configuring 3D reconstruction in Lite Mode without agy."""
+
+    project_id: str
+    character_name: str = Field(default="Lite 3D Asset")
+    view_mapping: dict[str, str] = Field(
+        default_factory=lambda: {
+            "front": "tile_tl",
+            "left": "tile_tr",
+            "back": "tile_bl",
+            "right": "tile_br",
+        }
+    )
+    octree_resolution: int = Field(default=320, ge=128, le=512)
+    num_inference_steps: int = Field(default=10, ge=4, le=40)
+    guidance_scale: float = Field(default=5.5, ge=1.0, le=15.0)
+    target_height_mm: float = Field(default=80.0, ge=20.0, le=300.0)
+    taubin_smooth_iterations: int = Field(default=2, ge=0, le=10)
 
 
 def _read_json_if_exists(path: Path) -> dict[str, Any] | None:
@@ -647,19 +684,19 @@ async def run_pipeline_worker(job: PipelineJob) -> None:
         if req.from_step <= 5 <= req.to_step:
             if step4_data is None:
                 step4_data = _load_prior_json("step4_3d_config.json")
-            effective_remote_url = (
-                normalize_remote_url(
-                    req.remote_url
-                    or load_app_config().get("colab_url")
-                    or os.environ.get("COLAB_BACKEND_URL")
-                )
-                if req.device not in ("mps", "cpu")
-                else None
-            )
+            # 100% Local Apple Silicon MPS/CPU enforcement: only attempt remote if explicitly specified in req.remote_url
+            effective_remote_url = None
+            if req.remote_url and req.device not in ("mps", "cpu"):
+                candidate_remote_url = normalize_remote_url(req.remote_url)
+                if candidate_remote_url:
+                    probe = await asyncio.to_thread(probe_remote_worker_health, candidate_remote_url, 2.0)
+                    if probe.get("ok"):
+                        effective_remote_url = candidate_remote_url
+
             step5_msg = (
                 "Reconstructing watertight mesh on Colab GPU..."
                 if effective_remote_url
-                else "Reconstructing watertight mesh"
+                else "Reconstructing watertight mesh locally on Apple Silicon (MPS)..."
             )
             job.broadcast(
                 "stage",
@@ -968,6 +1005,146 @@ def create_app(
         if not target.is_dir():
             raise HTTPException(status_code=404, detail=f"Asset '{asset_name}' not found")
         return build_asset_payload(target)
+
+    # Lite Mode Endpoints (Bring-Your-Own-Image 3D Pipeline)
+    @app.post("/api/lite/upload-sheet")
+    async def upload_lite_sheet(
+        file: UploadFile | None = File(None),
+        project_id: str | None = Form(None),
+        demo_asset: str | None = Form(None),
+        character_name: str | None = Form(None),
+    ) -> dict[str, Any]:
+        if not project_id:
+            name = character_name or "Lite 3D Character"
+            meta = create_project(prompt=f"Lite Mode: {name}", name=name, projects_dir=projects_dir)
+            project_id = meta["id"]
+
+        proj_dir = (projects_dir / project_id).resolve()
+        proj_dir.mkdir(parents=True, exist_ok=True)
+        sheet_target = proj_dir / "sheet.png"
+
+        if file is not None and file.filename:
+            content = await file.read()
+            with open(sheet_target, "wb") as f:
+                f.write(content)
+        elif demo_asset:
+            demo_path = outputs_dir / sanitize_slug(demo_asset) / "sheet.png"
+            if not demo_path.is_file():
+                demo_path = outputs_dir / "cute_robot" / "sheet.png"
+            if demo_path.is_file():
+                shutil.copy2(demo_path, sheet_target)
+            else:
+                raise HTTPException(status_code=404, detail="Demo asset sheet not found")
+        else:
+            if not sheet_target.is_file():
+                raise HTTPException(status_code=400, detail="Vui lòng tải lên file ảnh 2x2 hoặc chọn demo_asset")
+
+        analysis = analyze_turnaround_sheet(sheet_target)
+
+        meta = read_project_meta(proj_dir)
+        if meta:
+            meta["stage"] = "turnaround"
+            meta["step"] = 2
+            if 2 not in meta.get("completed_steps", []):
+                meta["completed_steps"] = sorted(list(set(meta.get("completed_steps", []) + [2])))
+            write_project_meta(proj_dir, meta)
+
+        step1_file = proj_dir / "step1_prompt.json"
+        if not step1_file.is_file():
+            with open(step1_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "asset_name": project_id,
+                        "character_design_spec": character_name or "Custom 3D character imported via Lite Mode",
+                        "turnaround_image_prompt": "Imported external turnaround sheet",
+                        "negative_constraints": "None",
+                    },
+                    f,
+                    indent=2,
+                )
+
+        step2_file = proj_dir / "step2_image.json"
+        with open(step2_file, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "sheet_image_path": str(sheet_target),
+                    "width": analysis["width"],
+                    "height": analysis["height"],
+                },
+                f,
+                indent=2,
+            )
+
+        return {
+            "project_id": project_id,
+            "sheet_url": f"/projects/{project_id}/sheet.png",
+            "analysis": analysis,
+            "asset": build_asset_payload(proj_dir),
+        }
+
+    @app.post("/api/lite/slice")
+    async def slice_lite_sheet(req: LiteSliceRequest) -> dict[str, Any]:
+        proj_dir = (projects_dir / req.project_id).resolve()
+        sheet_target = proj_dir / "sheet.png"
+        if not sheet_target.is_file():
+            raise HTTPException(status_code=404, detail=f"Không tìm thấy sheet.png trong dự án {req.project_id}")
+
+        step3_data = await asyncio.to_thread(
+            slice_and_clean_lite,
+            sheet_path=sheet_target,
+            output_dir=proj_dir,
+            center_x_ratio=req.center_x,
+            center_y_ratio=req.center_y,
+            trim_ratio=req.trim_ratio,
+            auto_normalize_heights=req.auto_normalize_heights,
+        )
+
+        sync_project_meta_step(proj_dir, "slicing", 3)
+
+        tiles_list = []
+        for key in ["tile_tl", "tile_tr", "tile_bl", "tile_br"]:
+            tile_meta = step3_data.get("tiles", {}).get(key, {})
+            tiles_list.append(
+                {
+                    "key": key,
+                    "url": f"/projects/{req.project_id}/tiles/{key}.png",
+                    "expected_view": tile_meta.get("expected_view", "front"),
+                    "coverage_ratio": tile_meta.get("coverage_ratio", 0.0),
+                    "components_kept": tile_meta.get("components_kept", 1),
+                    "bbox": tile_meta.get("bbox", [0, 0, 0, 0]),
+                }
+            )
+
+        return {
+            "project_id": req.project_id,
+            "step3": step3_data,
+            "tiles": tiles_list,
+            "asset": build_asset_payload(proj_dir),
+        }
+
+    @app.post("/api/lite/configure-3d")
+    def configure_lite_3d(req: LiteConfigure3DRequest) -> dict[str, Any]:
+        proj_dir = (projects_dir / req.project_id).resolve()
+        if not proj_dir.is_dir():
+            raise HTTPException(status_code=404, detail=f"Dự án '{req.project_id}' không tồn tại")
+
+        config = build_lite_3d_config(
+            output_dir=proj_dir,
+            view_mapping=req.view_mapping,
+            octree_resolution=req.octree_resolution,
+            num_inference_steps=req.num_inference_steps,
+            guidance_scale=req.guidance_scale,
+            target_height_mm=req.target_height_mm,
+            taubin_smooth_iterations=req.taubin_smooth_iterations,
+            character_name=req.character_name,
+        )
+
+        sync_project_meta_step(proj_dir, "reconstructing", 4)
+        return {
+            "project_id": req.project_id,
+            "config": config,
+            "asset": build_asset_payload(proj_dir),
+        }
 
     # 3D Pipeline Execution Endpoint
     @app.post("/api/generate")

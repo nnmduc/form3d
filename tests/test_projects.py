@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from server import create_app

@@ -71,13 +71,13 @@ def run_pipeline(
 
     # Step 2: Generate 2x2 Turnaround Sheet
     if from_step <= 2 <= to_step:
-        print(f"\n=== [Step 2/5] Generating 2x2 orthographic turnaround sheet via `agy` (image-generator) ===")
+        print("\n=== [Step 2/5] Generating 2x2 orthographic turnaround sheet via `agy` (image-generator) ===")
         step2_data = run_step2(output_dir, step1_data=step1_data)
         print(f" -> Saved turnaround sheet: {step2_data['sheet_image_path']}")
 
     # Step 3: Slice 2x2 Quadrant Tiles + rembg + OpenCV Alpha Cleanup
     if from_step <= 3 <= to_step:
-        print(f"\n=== [Step 3/5] Slicing 2x2 quadrants + removing background + cleaning alpha masks ===")
+        print("\n=== [Step 3/5] Slicing 2x2 quadrants + removing background + cleaning alpha masks ===")
         step3_data = run_step3(output_dir, step2_data=step2_data)
         for tile_name, meta in step3_data["tiles"].items():
             print(
@@ -87,7 +87,7 @@ def run_pipeline(
 
     # Step 4: Multimodal View Verification & 3D Config Optimization via `agy`
     if from_step <= 4 <= to_step:
-        print(f"\n=== [Step 4/5] Verifying views & optimizing 3D config via `agy` ===")
+        print("\n=== [Step 4/5] Verifying views & optimizing 3D config via `agy` ===")
         step4_data = run_step4(output_dir, step1_data=step1_data, step3_data=step3_data)
         print(f" -> Verified views: {list(step4_data['view_mapping'].keys())}")
         print(
@@ -99,7 +99,7 @@ def run_pipeline(
 
     # Step 5: 3D Mesh Generation (Local MPS or Remote Colab GPU) & STL/GLB Export
     if from_step <= 5 <= to_step:
-        print(f"\n=== [Step 5/5] Synthesizing 3D mesh (`tencent/Hunyuan3D-2mv`) & exporting .stl / .glb ===")
+        print("\n=== [Step 5/5] Synthesizing 3D mesh (`tencent/Hunyuan3D-2mv`) & exporting .stl / .glb ===")
         manifest = run_step5(output_dir, step4_data=step4_data, device=device, remote_url=remote_url)
         stats = manifest["mesh_stats"]
         print(f" -> STL: {manifest['stl_path']}")
