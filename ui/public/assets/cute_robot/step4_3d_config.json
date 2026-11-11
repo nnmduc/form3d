@@ -1,0 +1,15 @@
+{
+  "guidance_scale": 5.5,
+  "mesh_3d_prompt": "Compact chibi-proportioned vinyl-toy style cute robot with watertight manifold geometry: rounded-cubic head with two thick stubby rounded-cone ear-nodes fused to the top cranial shell, recessed rounded-rectangular facial visor with embossed oval eyes and curved smile, stout barrel-shaped torso with recessed chest plate featuring a raised heart badge and three chunky horizontal pill buttons, chunky rounded-trapezoid dorsal backpack with circular central turbine cooling vent and dual vertical louvered exhaust slots, vertical rear cranial data-port slot, circular bolted side temple caps with raised star and lightning-bolt emblems, thick cylindrical arms with integrated ball-shoulder joints and cuffed forearms, and short stocky pillar legs with oversized flat-soled blocky boots.",
+  "num_inference_steps": 10,
+  "octree_resolution": 320,
+  "qa_notes": "Visual inspection of all 4 RGBA quadrant tiles confirms clean alpha segmentation, zero floating geometry, and accurate camera orientations matching expected positions:\n- tile_tl.png (front): Clean orthographic front view showing the rounded-cubic sky-blue head, coral-orange stubby ear-nodes, recessed charcoal visor with cyan eyes and smile, cream chest plate with raised heart badge and three horizontal pill buttons, symmetric A-pose arms, and flat-soled blocky boots.\n- tile_tr.png (left): Clean orthographic left profile view (facing left) showing the circular bolted temple cap with a raised star emblem, forward visor bezel, chest buttons profile, and rear dorsal backpack protrusion.\n- tile_bl.png (back): Clean orthographic back view showing the rear vertical cranial slot and the chunky dorsal backpack with a central circular turbine cooling fan and two vertical louvered vents below.\n- tile_br.png (right): Clean orthographic right profile view (facing right) showing the circular bolted cap with a raised lightning-bolt emblem on the temple and shoulder, front heart badge protrusion, and rear dorsal backpack.\n\nSelected octree_resolution=320 to preserve the embossed emblems, turbine blades, chest buttons, and louvered vents while maintaining smooth vinyl-toy surfaces on M1 Pro, paired with num_inference_steps=10, guidance_scale=5.5, target_height_mm=80.0, and taubin_smooth_iterations=2.",
+  "target_height_mm": 80,
+  "taubin_smooth_iterations": 2,
+  "view_mapping": {
+    "back": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_bl.png",
+    "front": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_tl.png",
+    "left": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_tr.png",
+    "right": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_br.png"
+  }
+}

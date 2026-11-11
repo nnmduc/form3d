@@ -1,0 +1,106 @@
+{
+  "sheet_image_path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/sheet.png",
+  "sheet_size": [
+    1024,
+    1024
+  ],
+  "trim_ratio": 0.02,
+  "tiles": {
+    "tile_tl": {
+      "path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_tl.png",
+      "expected_view": "front",
+      "crop_box": [
+        10,
+        10,
+        502,
+        502
+      ],
+      "size": [
+        492,
+        492
+      ],
+      "foreground_pixels": 100603,
+      "coverage_ratio": 0.4156,
+      "components_total": 1,
+      "components_kept": 1,
+      "bbox": [
+        56,
+        38,
+        441,
+        480
+      ]
+    },
+    "tile_tr": {
+      "path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_tr.png",
+      "expected_view": "left",
+      "crop_box": [
+        522,
+        10,
+        1014,
+        502
+      ],
+      "size": [
+        492,
+        492
+      ],
+      "foreground_pixels": 70432,
+      "coverage_ratio": 0.291,
+      "components_total": 1,
+      "components_kept": 1,
+      "bbox": [
+        162,
+        39,
+        403,
+        480
+      ]
+    },
+    "tile_bl": {
+      "path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_bl.png",
+      "expected_view": "back",
+      "crop_box": [
+        10,
+        522,
+        502,
+        1014
+      ],
+      "size": [
+        492,
+        492
+      ],
+      "foreground_pixels": 101689,
+      "coverage_ratio": 0.4201,
+      "components_total": 1,
+      "components_kept": 1,
+      "bbox": [
+        61,
+        19,
+        437,
+        466
+      ]
+    },
+    "tile_br": {
+      "path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/tiles/tile_br.png",
+      "expected_view": "right",
+      "crop_box": [
+        522,
+        522,
+        1014,
+        1014
+      ],
+      "size": [
+        492,
+        492
+      ],
+      "foreground_pixels": 72879,
+      "coverage_ratio": 0.3011,
+      "components_total": 1,
+      "components_kept": 1,
+      "bbox": [
+        100,
+        19,
+        343,
+        466
+      ]
+    }
+  }
+}

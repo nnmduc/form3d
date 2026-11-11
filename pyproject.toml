@@ -1,0 +1,70 @@
+[project]
+name = "form3d"
+version = "0.2.0"
+description = "5-Step Modular Text-to-3D (.stl & .glb) Generator for Apple Silicon (MPS) and Google Colab Pro"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "Form 3D Contributors" }
+]
+keywords = [
+    "3d-generator",
+    "text-to-3d",
+    "hunyuan3d-2",
+    "apple-silicon",
+    "mps",
+    "trimesh",
+    "stl",
+    "glb",
+    "fastapi",
+    "tauri",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Manufacturing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.4.0",
+    "torchvision>=0.19.0",
+    "diffusers>=0.30.0,<1.0.0",
+    "transformers>=4.48.0,<5.0.0",
+    "accelerate>=1.0.0",
+    "safetensors>=0.4.0",
+    "huggingface-hub>=0.26.0",
+    "einops>=0.8.0",
+    "omegaconf>=2.3.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.66.3",
+    "numpy>=1.26.0,<2.0.0",
+    "pillow>=10.0.0",
+    "opencv-python>=4.10.0",
+    "scikit-image>=0.24.0",
+    "scipy>=1.13.0",
+    "networkx>=3.2",
+    "trimesh>=4.4.0",
+    "pygltflib>=1.16.0",
+    "rembg>=2.0.59",
+    "onnxruntime>=1.19.0",
+    "jsonschema>=4.23.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "httpx>=0.27.0",
+    "pytest>=8.0.0",
+    "hy3dgen @ git+https://github.com/Tencent-Hunyuan/Hunyuan3D-2.git",
+]
+
+[project.urls]
+Homepage = "https://github.com/layerzero-dev/form3d"
+Repository = "https://github.com/layerzero-dev/form3d"
+Issues = "https://github.com/layerzero-dev/form3d/issues"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

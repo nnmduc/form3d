@@ -1,0 +1,64 @@
+{
+  "type": "object",
+  "properties": {
+    "view_mapping": {
+      "type": "object",
+      "description": "Maps valid camera views (front, left, back, right) to their verified tile PNG paths",
+      "properties": {
+        "front": { "type": "string" },
+        "left": { "type": "string" },
+        "back": { "type": "string" },
+        "right": { "type": "string" }
+      },
+      "required": ["front"],
+      "additionalProperties": false
+    },
+    "mesh_3d_prompt": {
+      "type": "string",
+      "description": "Optimized 3D geometry & surface prompt describing the target 3D mesh"
+    },
+    "octree_resolution": {
+      "type": "integer",
+      "minimum": 192,
+      "maximum": 384,
+      "description": "Marching cubes octree resolution: choose 256 (fast/smooth), 320 (balanced), or 380 (high detail)"
+    },
+    "num_inference_steps": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 30,
+      "description": "Flow-matching inference steps (5-15 recommended for turbo model)"
+    },
+    "guidance_scale": {
+      "type": "number",
+      "minimum": 3.0,
+      "maximum": 10.0,
+      "description": "Classifier-free guidance scale (default 5.0)"
+    },
+    "target_height_mm": {
+      "type": "number",
+      "description": "Target 3D print height in millimeters (e.g. 80.0)"
+    },
+    "taubin_smooth_iterations": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Optional Taubin smoothing iterations to smooth marching-cubes voxel stair-stepping while preserving volume"
+    },
+    "qa_notes": {
+      "type": "string",
+      "description": "Visual QA observations on the 4 cut views and why views were mapped/selected"
+    }
+  },
+  "required": [
+    "view_mapping",
+    "mesh_3d_prompt",
+    "octree_resolution",
+    "num_inference_steps",
+    "guidance_scale",
+    "target_height_mm",
+    "taubin_smooth_iterations",
+    "qa_notes"
+  ],
+  "additionalProperties": false
+}

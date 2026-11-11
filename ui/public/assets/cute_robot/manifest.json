@@ -1,0 +1,37 @@
+{
+  "asset_name": "cute_robot",
+  "stl_path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/cute_robot.stl",
+  "glb_path": "/Users/duc/Projects/peter/3d-generator/outputs/cute_robot/cute_robot.glb",
+  "device": "mps",
+  "inference_seconds": 210.07,
+  "views_used": [
+    "back",
+    "front",
+    "left",
+    "right"
+  ],
+  "octree_resolution": 320,
+  "num_inference_steps": 10,
+  "guidance_scale": 5.5,
+  "target_height_mm": 80.0,
+  "mesh_stats": {
+    "vertices": 307975,
+    "faces": 615958,
+    "is_watertight": true,
+    "extents_mm": {
+      "x_width": 70.72,
+      "y_depth": 44.95,
+      "z_height": 80.0
+    },
+    "bounds_min_mm": [
+      -35.358,
+      -22.476,
+      0.0
+    ],
+    "bounds_max_mm": [
+      35.358,
+      22.476,
+      80.0
+    ]
+  }
+}

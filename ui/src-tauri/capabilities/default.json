@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for Form 3D Studio desktop window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

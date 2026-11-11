@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "sheet_image_path": {
+      "type": "string",
+      "description": "Absolute path to the saved 1024x1024 2x2 orthographic turnaround sheet PNG"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ok", "error"],
+      "description": "Generation status"
+    }
+  },
+  "required": ["sheet_image_path", "status"],
+  "additionalProperties": false
+}

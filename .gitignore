@@ -1,0 +1,77 @@
+# Python & Virtual Environments
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Node.js, UI & Frontend
+node_modules/
+ui/node_modules/
+ui/dist/
+ui/dist-ssr/
+*.local
+
+# Tauri & Rust Build Artifacts
+ui/src-tauri/target/
+ui/src-tauri/binaries/form3d-backend-*
+release/
+
+# Project Outputs & Testing Runs
+outputs/*
+!outputs/.gitkeep
+
+# Colab Worker & Notebooks
+colab/
+*.ipynb
+
+# Claude / Antigravity Skills & Local Agent Tooling
+.agents/
+.claude/
+.gemini/
+skills/
+*.skill
+.cloudflare/
+.worktrees/
+.DS_Store
+**/.DS_Store
+*.swp
+*.swo
+*~
+
+# Email Templates, Campaign Scripts & Customer CSVs
+templates/
+send_form3d_build.py
+export_registrations.py
+recipients_to_email_*.csv
+registrations_*.csv
+*.csv
+
+# Internal Handoff Documents & Plans
+*handoff*.md
+*HANDOFF*.md
+docs/
+plans/
+implementation_plan*.md
+
+# Video, Recording & Packaging Artifacts
+*.mp4
+*.webm
+*.mov
+*.dmg
+*.pkg
+*.app
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.cred*
+*.key
+*.pem

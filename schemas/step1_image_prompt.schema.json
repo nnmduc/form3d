@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "asset_name": {
+      "type": "string",
+      "description": "Snake_case slug for output directory and filenames, e.g. cute_robot"
+    },
+    "character_design_spec": {
+      "type": "string",
+      "description": "Detailed physical description of shape, proportions, sturdy manifold limbs, flat-footed stance, and distinct front/back/side landmarks"
+    },
+    "turnaround_image_prompt": {
+      "type": "string",
+      "description": "Complete prompt for generating a single square 1:1 (1024x1024) 2x2 orthographic turnaround sheet (Top-Left: FRONT, Top-Right: LEFT profile, Bottom-Left: BACK, Bottom-Right: RIGHT profile) on pure solid flat white #FFFFFF background without text labels, grid lines, or floor shadows"
+    },
+    "negative_constraints": {
+      "type": "string",
+      "description": "Elements to avoid (text labels, grid lines, dividing borders, cast shadows, thin wires, floating parts, pedestals)"
+    }
+  },
+  "required": [
+    "asset_name",
+    "character_design_spec",
+    "turnaround_image_prompt",
+    "negative_constraints"
+  ],
+  "additionalProperties": false
+}
