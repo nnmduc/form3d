@@ -47,8 +47,8 @@ skills/
 
 # Email Templates, Campaign Scripts & Customer CSVs
 templates/
-send_form3d_build.py
-export_registrations.py
+send_form3d_build*.py
+export_registrations*.py
 recipients_to_email_*.csv
 registrations_*.csv
 *.csv
